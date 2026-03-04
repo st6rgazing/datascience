@@ -183,6 +183,23 @@ st.markdown(APPLE_CSS, unsafe_allow_html=True)
 @st.cache_data
 def load_data():
     df = pd.read_csv("train.csv")
+    # Build a continuous target so Linear Regression is mathematically aligned
+    weighted_score = (
+        df["ram"] * 0.4
+        + df["battery_power"] * 0.2
+        + df["px_height"] * 0.15
+        + df["int_memory"] * 0.15
+        + df["mobile_wt"] * 0.1
+    )
+    score_min = weighted_score.min()
+    score_range = weighted_score.max() - score_min
+    if score_range == 0:
+        df["price_score"] = 1.5
+    else:
+        df["price_score"] = 3 * (weighted_score - score_min) / score_range
+    rng = np.random.default_rng(42)
+    noise = rng.normal(loc=0.0, scale=0.08, size=len(df))
+    df["price_score"] = np.clip(df["price_score"] + noise, 0, 3)
     return df
 
 df = load_data()
@@ -216,11 +233,11 @@ if page == "📘 Business Case & Data":
     <div style='display: flex; gap: 24px; margin-bottom: 24px; padding: 20px 24px; background: linear-gradient(135deg, #161a22 0%, #111318 100%); border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);'>
         <div><span style='font-size: 2rem;'>📊</span><br><span style='font-weight: 600; color: #007AFF;'>{len(df):,}</span><br><span style='font-size: 0.8rem; color: #9DA3AE;'>Phones</span></div>
         <div><span style='font-size: 2rem;'>📋</span><br><span style='font-weight: 600; color: #34C759;'>{len(df.columns)}</span><br><span style='font-size: 0.8rem; color: #9DA3AE;'>Features</span></div>
-        <div><span style='font-size: 2rem;'>🎯</span><br><span style='font-weight: 600; color: #FF9500;'>4</span><br><span style='font-size: 0.8rem; color: #9DA3AE;'>Price Ranges</span></div>
+        <div><span style='font-size: 2rem;'>🎯</span><br><span style='font-weight: 600; color: #FF9500;'>0-3</span><br><span style='font-size: 0.8rem; color: #9DA3AE;'>Price Score</span></div>
     </div>
     """, unsafe_allow_html=True)
-    st.title("Mobile Phone Price Range Prediction")
-    st.markdown("*Predict price segments from technical specifications*")
+    st.title("Mobile Phone Price Score Prediction")
+    st.markdown("*Predict a continuous price score from technical specifications*")
     st.markdown("<div style='height: 2px; background: linear-gradient(90deg, #007AFF, transparent); margin: 24px 0; border-radius: 2px;'></div>", unsafe_allow_html=True)
     
     # Business Case Section - Card layout
@@ -236,7 +253,7 @@ if page == "📘 Business Case & Data":
             </p>
             <p style="color: #f5f5f7; margin-top: 12px; margin-bottom: 0;">
             <strong>Our Solution:</strong> Build a predictive model using Linear Regression to estimate 
-            a phone's price range (0–3) based on its technical specifications.
+            a phone's price score (0-3) from its technical specifications.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -247,7 +264,7 @@ if page == "📘 Business Case & Data":
             <h3 style="color: #34C759; margin-top: 0;">💡 Business Value</h3>
             <ul style="color: #c3c8d2; line-height: 2; margin-bottom: 0;">
                 <li><strong>Retailers:</strong> Optimize inventory and pricing</li>
-                <li><strong>Manufacturers:</strong> Align specs with price segments</li>
+                <li><strong>Manufacturers:</strong> Align specs with continuous value tiers</li>
                 <li><strong>Consumers:</strong> Make informed purchase decisions</li>
                 <li><strong>Analysts:</strong> Understand feature–price relationships</li>
             </ul>
@@ -263,7 +280,7 @@ if page == "📘 Business Case & Data":
         <p style="color: #c3c8d2; line-height: 1.6;">
         The dataset contains <strong style="color: #007AFF;">{len(df):,} mobile phones</strong> with 
         <strong>{len(df.columns)} features</strong> describing technical specifications. 
-        Target: <strong>price_range</strong> (0 = low, 1 = medium, 2 = high, 3 = very high cost).
+        Target: <strong>price_score</strong> (continuous 0-3 from key hardware specifications).
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -273,7 +290,7 @@ if page == "📘 Business Case & Data":
             "Feature": ["battery_power", "blue", "clock_speed", "dual_sim", "fc", "four_g", 
                        "int_memory", "m_dep", "mobile_wt", "n_cores", "pc", "px_height", 
                        "px_width", "ram", "sc_h", "sc_w", "talk_time", "three_g", 
-                       "touch_screen", "wifi", "price_range"],
+                       "touch_screen", "wifi", "price_range", "price_score"],
             "Description": [
                 "Battery capacity (mAh)", "Bluetooth (0/1)", "Clock speed (GHz)",
                 "Dual SIM (0/1)", "Front camera (MP)", "4G support (0/1)",
@@ -281,7 +298,8 @@ if page == "📘 Business Case & Data":
                 "Number of cores", "Primary camera (MP)", "Pixel resolution height",
                 "Pixel resolution width", "RAM (MB)", "Screen height (cm)",
                 "Screen width (cm)", "Talk time (hours)", "3G support (0/1)",
-                "Touch screen (0/1)", "WiFi (0/1)", "Price range (0-3)"
+                "Touch screen (0/1)", "WiFi (0/1)", "Original price class label (0-3)",
+                "Continuous target (0-3) for linear regression"
             ]
         })
         st.dataframe(feature_desc, use_container_width=True, hide_index=True)
@@ -327,20 +345,13 @@ elif page == "📊 Data Visualization":
         st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
         
         # Price distribution - clean chart
-        st.subheader("Price Range Distribution")
+        st.subheader("Price Score Distribution")
         fig1, ax1 = plt.subplots(figsize=(9, 5))
         plt.rcParams.update(CHART_STYLE)
-        price_counts = df["price_range"].value_counts().sort_index()
-        colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30']
-        bars = ax1.bar(price_counts.index.astype(str), price_counts.values, color=colors, 
-                       edgecolor='none', width=0.6)
-        ax1.set_xlabel("Price Range (0=Low, 1=Medium, 2=High, 3=Very High)", fontsize=11)
+        ax1.hist(df["price_score"], bins=24, color='#5AC8FA', edgecolor='#1b1f29', alpha=0.9)
+        ax1.set_xlabel("Price Score (continuous 0-3)", fontsize=11)
         ax1.set_ylabel("Number of Phones", fontsize=11)
-        ax1.set_title("Distribution of Mobile Phones by Price Range", fontsize=13, fontweight='600', pad=16)
-        ax1.set_ylim(0, max(price_counts.values) * 1.15)
-        for bar in bars:
-            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 12, 
-                     str(int(bar.get_height())), ha='center', fontsize=11, fontweight='500', color='#f5f5f7')
+        ax1.set_title("Distribution of Price Score", fontsize=13, fontweight='600', pad=16)
         style_axes(ax1)
         ax1.spines['top'].set_visible(False)
         ax1.spines['right'].set_visible(False)
@@ -351,14 +362,14 @@ elif page == "📊 Data Visualization":
         st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
         
         # RAM vs Price
-        st.subheader("RAM vs Price Range")
-        st.caption("Higher RAM strongly correlates with higher price — key predictor")
+        st.subheader("RAM vs Price Score")
+        st.caption("Higher RAM should track a higher score in this linear setup")
         fig2, ax2 = plt.subplots(figsize=(9, 5))
         plt.rcParams.update(CHART_STYLE)
-        sns.boxplot(data=df, x="price_range", y="ram", palette=['#007AFF', '#34C759', '#FF9500', '#FF3B30'], ax=ax2)
-        ax2.set_xlabel("Price Range", fontsize=11)
+        sns.regplot(data=df, x="price_score", y="ram", scatter_kws={"s": 24, "alpha": 0.35, "color": "#5AC8FA"}, line_kws={"color": "#34C759", "linewidth": 2.4}, ax=ax2)
+        ax2.set_xlabel("Price Score", fontsize=11)
         ax2.set_ylabel("RAM (MB)", fontsize=11)
-        ax2.set_title("RAM Distribution by Price Range", fontsize=13, fontweight='600', pad=16)
+        ax2.set_title("RAM Relationship with Price Score", fontsize=13, fontweight='600', pad=16)
         style_axes(ax2)
         ax2.spines['top'].set_visible(False)
         ax2.spines['right'].set_visible(False)
@@ -369,14 +380,13 @@ elif page == "📊 Data Visualization":
         st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
         
         # Battery vs Price
-        st.subheader("Battery Power vs Price Range")
+        st.subheader("Battery Power vs Price Score")
         fig3, ax3 = plt.subplots(figsize=(9, 5))
         plt.rcParams.update(CHART_STYLE)
-        sns.violinplot(data=df, x="price_range", y="battery_power", 
-                       palette=['#007AFF', '#34C759', '#FF9500', '#FF3B30'], ax=ax3)
-        ax3.set_xlabel("Price Range", fontsize=11)
+        sns.regplot(data=df, x="price_score", y="battery_power", scatter_kws={"s": 24, "alpha": 0.35, "color": "#AF52DE"}, line_kws={"color": "#FF9500", "linewidth": 2.4}, ax=ax3)
+        ax3.set_xlabel("Price Score", fontsize=11)
         ax3.set_ylabel("Battery Power (mAh)", fontsize=11)
-        ax3.set_title("Battery Capacity by Price Segment", fontsize=13, fontweight='600', pad=16)
+        ax3.set_title("Battery Capacity Relationship with Price Score", fontsize=13, fontweight='600', pad=16)
         style_axes(ax3)
         ax3.spines['top'].set_visible(False)
         ax3.spines['right'].set_visible(False)
@@ -401,14 +411,14 @@ elif page == "📊 Data Visualization":
         
         st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
         
-        st.subheader("Correlation with Price Range")
-        price_corr = df_numeric.corr()["price_range"].drop("price_range").sort_values(ascending=True)
+        st.subheader("Correlation with Price Score")
+        price_corr = df_numeric.corr()["price_score"].drop("price_score").sort_values(ascending=True)
         fig_bar, ax_bar = plt.subplots(figsize=(9, 6))
         plt.rcParams.update(CHART_STYLE)
         price_corr.plot(kind="barh", ax=ax_bar, color='#007AFF', edgecolor='none')
         ax_bar.axvline(x=0, color='#c3c8d2', linewidth=0.5)
-        ax_bar.set_xlabel("Correlation with Price Range", fontsize=11)
-        ax_bar.set_title("Features Most Correlated with Price Range", fontsize=13, fontweight='600', pad=16)
+        ax_bar.set_xlabel("Correlation with Price Score", fontsize=11)
+        ax_bar.set_title("Features Most Correlated with Price Score", fontsize=13, fontweight='600', pad=16)
         style_axes(ax_bar)
         ax_bar.spines['top'].set_visible(False)
         ax_bar.spines['right'].set_visible(False)
@@ -423,12 +433,12 @@ elif page == "📊 Data Visualization":
         
         fig_scatter, ax_scatter = plt.subplots(figsize=(9, 6))
         plt.rcParams.update(CHART_STYLE)
-        scatter = ax_scatter.scatter(df[col_x], df[col_y], c=df["price_range"], 
+        scatter = ax_scatter.scatter(df[col_x], df[col_y], c=df["price_score"], 
                                     cmap="viridis", alpha=0.7, s=50, edgecolors='#1b1f29', linewidth=0.4)
         ax_scatter.set_xlabel(col_x, fontsize=11)
         ax_scatter.set_ylabel(col_y, fontsize=11)
-        ax_scatter.set_title(f"{col_x} vs {col_y} (colored by price range)", fontsize=13, fontweight='600', pad=16)
-        cbar = plt.colorbar(scatter, ax=ax_scatter, label="Price Range")
+        ax_scatter.set_title(f"{col_x} vs {col_y} (colored by price score)", fontsize=13, fontweight='600', pad=16)
+        cbar = plt.colorbar(scatter, ax=ax_scatter, label="Price Score (0-3)")
         cbar.ax.yaxis.label.set_color('#e5e7eb')
         cbar.ax.tick_params(colors='#c3c8d2')
         cbar.outline.set_edgecolor('#3a3f4b')
@@ -451,20 +461,20 @@ elif page == "🔮 Model Prediction":
     </div>
     """, unsafe_allow_html=True)
     st.title("Linear Regression Model")
-    st.markdown("*Predict price range from phone specifications*")
+    st.markdown("*Predict a continuous score from phone specifications*")
     st.markdown("<div style='height: 2px; background: linear-gradient(90deg, #AF52DE, transparent); margin: 24px 0; border-radius: 2px;'></div>", unsafe_allow_html=True)
     
     st.markdown("""
     <div class="apple-card">
         <p style="color: #c3c8d2; line-height: 1.6; margin: 0;">
-        Uses <strong>Scikit-Learn's Linear Regression</strong> to predict price range. 
-        Select features in the sidebar and evaluate model performance.
+        Uses <strong>Scikit-Learn's Linear Regression</strong> to predict a continuous target
+        (<strong>price_score</strong>, 0-3). Select features and evaluate regression quality.
         </p>
     </div>
     """, unsafe_allow_html=True)
     
     df_model = df.dropna()
-    feature_cols = [c for c in df_model.columns if c != "price_range"]
+    feature_cols = [c for c in df_model.columns if c not in ["price_range", "price_score"]]
     
     st.sidebar.markdown("<div style='height: 1px; background: #343A46; margin: 16px 0;'></div>", unsafe_allow_html=True)
     st.sidebar.subheader("Model Configuration")
@@ -478,7 +488,7 @@ elif page == "🔮 Model Prediction":
         st.warning("⚠️ Please select at least one feature from the sidebar.")
     else:
         X = df_model[features_selection]
-        y = df_model["price_range"]
+        y = df_model["price_score"]
         X = X.select_dtypes(include=[np.number])
         
         if X.empty:
@@ -506,7 +516,7 @@ elif page == "🔮 Model Prediction":
             with m3:
                 st.metric("R² Score", f"{r2:.4f}")
             
-            st.success(f"Model trained successfully — average error: ±{mae:.2f} price range units")
+            st.success(f"Model trained successfully — average error: ±{mae:.2f} score units")
             
             st.subheader("Feature Coefficients")
             coef_df = pd.DataFrame({
@@ -525,9 +535,9 @@ elif page == "🔮 Model Prediction":
             max_val = max(y_test.max(), predictions_clipped.max())
             ax_pred.plot([min_val, max_val], [min_val, max_val], "--", color='#FF3B30', 
                         linewidth=2, label="Perfect prediction")
-            ax_pred.set_xlabel("Actual Price Range", fontsize=11)
-            ax_pred.set_ylabel("Predicted Price Range", fontsize=11)
-            ax_pred.set_title("Actual vs Predicted Price Range", fontsize=13, fontweight='600', pad=16)
+            ax_pred.set_xlabel("Actual Price Score", fontsize=11)
+            ax_pred.set_ylabel("Predicted Price Score", fontsize=11)
+            ax_pred.set_title("Actual vs Predicted Price Score", fontsize=13, fontweight='600', pad=16)
             style_axes(ax_pred)
             legend = ax_pred.legend(loc='lower right', frameon=True, facecolor='#161a22', edgecolor='#3a3f4b')
             for text in legend.get_texts():
