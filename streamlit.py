@@ -418,6 +418,23 @@ elif page == "📊 Data Visualization":
         
         st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
         
+        st.subheader("Correlation with Original Price Range")
+        price_range_corr = df_numeric.corr()["price_range"].drop("price_range").sort_values(ascending=True)
+        fig_bar_pr, ax_bar_pr = plt.subplots(figsize=(9, 6))
+        plt.rcParams.update(CHART_STYLE)
+        price_range_corr.plot(kind="barh", ax=ax_bar_pr, color='#AF52DE', edgecolor='none')
+        ax_bar_pr.axvline(x=0, color='#c3c8d2', linewidth=0.5)
+        ax_bar_pr.set_xlabel("Correlation with Original Price Range", fontsize=11)
+        ax_bar_pr.set_title("Features Most Correlated with Original Price Range", fontsize=13, fontweight='600', pad=16)
+        style_axes(ax_bar_pr)
+        ax_bar_pr.spines['top'].set_visible(False)
+        ax_bar_pr.spines['right'].set_visible(False)
+        plt.tight_layout(pad=2)
+        st.pyplot(fig_bar_pr)
+        plt.close()
+
+        st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+
         st.subheader("Correlation with Price Score")
         price_corr = df_numeric.corr()["price_score"].drop("price_score").sort_values(ascending=True)
         fig_bar, ax_bar = plt.subplots(figsize=(9, 6))
