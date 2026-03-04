@@ -241,7 +241,6 @@ if page == "📘 Business Case & Data":
     st.markdown("<div style='height: 2px; background: linear-gradient(90deg, #007AFF, transparent); margin: 24px 0; border-radius: 2px;'></div>", unsafe_allow_html=True)
     st.image(
         "WhatsApp Image 2026-03-04 at 17.20.09.jpeg",
-        caption="Mobile phones used in pricing analysis",
         use_container_width=True,
     )
     
