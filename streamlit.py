@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
 
@@ -494,7 +494,40 @@ elif page == "🔮 Model Prediction":
         if X.empty:
             st.error("Selected features contain non-numeric data.")
         else:
+            cv_folds = st.sidebar.slider("K-Fold splits", 3, 10, 5, key="cv_folds")
             test_size = st.sidebar.slider("Test set size", 0.1, 0.4, 0.2, key="test_size")
+
+            # K-Fold cross-validation on the full selected dataset
+            cv_model = LinearRegression()
+            kf = KFold(n_splits=cv_folds, shuffle=True, random_state=42)
+            cv_r2_scores = cross_val_score(cv_model, X, y, cv=kf, scoring="r2")
+            cv_mse_scores = -cross_val_score(cv_model, X, y, cv=kf, scoring="neg_mean_squared_error")
+            cv_rmse_scores = np.sqrt(cv_mse_scores)
+            cv_mae_scores = -cross_val_score(cv_model, X, y, cv=kf, scoring="neg_mean_absolute_error")
+            best_fold_idx = int(np.argmax(cv_r2_scores))
+            best_fold_num = best_fold_idx + 1
+            best_fold_mse = cv_mse_scores[best_fold_idx]
+            best_fold_mae = cv_mae_scores[best_fold_idx]
+            best_fold_r2 = cv_r2_scores[best_fold_idx]
+            best_fold_rmse = cv_rmse_scores[best_fold_idx]
+
+            st.subheader(f"{cv_folds}-Fold Cross-Validation")
+            cv1, cv2 = st.columns(2)
+            with cv1:
+                st.metric("CV Mean R²", f"{cv_r2_scores.mean():.4f}")
+            with cv2:
+                st.metric("CV Mean RMSE", f"{cv_rmse_scores.mean():.4f}")
+
+            with st.expander("Show fold-by-fold CV scores", expanded=False):
+                cv_details = pd.DataFrame({
+                    "Fold": np.arange(1, cv_folds + 1),
+                    "MSE": cv_mse_scores,
+                    "MAE": cv_mae_scores,
+                    "R²": cv_r2_scores,
+                    "RMSE": cv_rmse_scores
+                })
+                st.dataframe(cv_details, use_container_width=True, hide_index=True)
+
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
             
             model = LinearRegression()
@@ -504,19 +537,24 @@ elif page == "🔮 Model Prediction":
             
             # Metrics in cards
             st.subheader("Model Performance")
-            mse = metrics.mean_squared_error(y_test, predictions_clipped)
-            mae = metrics.mean_absolute_error(y_test, predictions_clipped)
-            r2 = metrics.r2_score(y_test, predictions_clipped)
+            mse = best_fold_mse
+            mae = best_fold_mae
+            r2 = best_fold_r2
             
-            m1, m2, m3 = st.columns(3)
+            m1, m2, m3, m4 = st.columns(4)
             with m1:
                 st.metric("Mean Squared Error", f"{mse:.4f}")
             with m2:
                 st.metric("Mean Absolute Error", f"{mae:.4f}")
             with m3:
                 st.metric("R² Score", f"{r2:.4f}")
+            with m4:
+                st.metric("Best Fold", f"Fold {best_fold_num}")
             
-            st.success(f"Model trained successfully — average error: ±{mae:.2f} score units")
+            st.success(
+                f"Model trained successfully — average error: ±{mae:.2f} score units | "
+                f"Best fold: {best_fold_num} (R²={best_fold_r2:.4f}, RMSE={best_fold_rmse:.4f})"
+            )
             
             st.subheader("Feature Coefficients")
             coef_df = pd.DataFrame({
