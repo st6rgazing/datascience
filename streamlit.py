@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn import metrics
 
 # =============================================================================
-# APPLE-INSPIRED STYLING
+# APPLE-INSPIRED DARK STYLING
 # =============================================================================
 APPLE_CSS = """
 <style>
@@ -19,15 +19,19 @@ APPLE_CSS = """
     
     /* Global styling */
     .stApp {
-        background: linear-gradient(180deg, #f5f5f7 0%, #ffffff 100%);
+        background: linear-gradient(180deg, #0b0c10 0%, #111318 100%);
+        color: #f5f5f7;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     
     /* Sidebar - clean Apple style */
     [data-testid="stSidebar"] {
-        background: rgba(255,255,255,0.92);
+        background: rgba(17,19,24,0.92);
         backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(0,0,0,0.06);
+        border-right: 1px solid rgba(255,255,255,0.08);
+    }
+    [data-testid="stSidebar"] * {
+        color: #e5e7eb !important;
     }
     [data-testid="stSidebar"] .stRadio > label {
         font-weight: 500;
@@ -35,23 +39,26 @@ APPLE_CSS = """
     
     /* Card containers */
     .apple-card {
-        background: #ffffff;
+        background: #161a22;
         border-radius: 16px;
         padding: 28px;
         margin: 20px 0;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+        border: 1px solid rgba(255,255,255,0.08);
     }
     
     /* Headers - Apple typography */
     h1, h2, h3 {
         font-weight: 600 !important;
         letter-spacing: -0.02em !important;
-        color: #1d1d1f !important;
+        color: #f5f5f7 !important;
     }
     h1 { font-size: 2.2rem !important; }
     h2 { font-size: 1.5rem !important; margin-top: 2rem !important; }
     h3 { font-size: 1.15rem !important; }
+    p, li, label, span {
+        color: #c3c8d2;
+    }
     
     /* Metric cards */
     [data-testid="stMetricValue"] {
@@ -64,7 +71,7 @@ APPLE_CSS = """
     .stDataFrame {
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.22);
     }
     
     /* Buttons */
@@ -89,11 +96,13 @@ APPLE_CSS = """
         border-radius: 10px;
         padding: 10px 20px;
         font-weight: 500;
+        background: #1b1f29;
     }
     
     /* Expander */
     .streamlit-expanderHeader {
         border-radius: 10px;
+        background: #1b1f29;
     }
     
     /* Success/Warning messages */
@@ -108,16 +117,19 @@ APPLE_CSS = """
 </style>
 """
 
-# Chart styling - Apple-inspired clean look
+# Chart styling - Apple-inspired dark look
 CHART_STYLE = {
-    'figure.facecolor': '#ffffff',
-    'axes.facecolor': '#ffffff',
-    'axes.edgecolor': '#d2d2d7',
-    'axes.labelcolor': '#1d1d1f',
+    'figure.facecolor': '#111318',
+    'axes.facecolor': '#161a22',
+    'axes.edgecolor': '#3a3f4b',
+    'axes.labelcolor': '#e5e7eb',
+    'axes.titlecolor': '#f5f5f7',
     'axes.spines.top': False,
     'axes.spines.right': False,
-    'xtick.color': '#6e6e73',
-    'ytick.color': '#6e6e73',
+    'xtick.color': '#c3c8d2',
+    'ytick.color': '#c3c8d2',
+    'text.color': '#f5f5f7',
+    'grid.color': '#2a2f3a',
     'font.family': 'sans-serif',
     'font.size': 11,
 }
@@ -150,18 +162,18 @@ st.sidebar.markdown("""
 <div style='display: flex; align-items: center; gap: 10px;'>
     <span style='font-size: 28px;'>📱</span>
     <div>
-        <div style='font-weight: 600; font-size: 1.1rem; color: #1d1d1f;'>Mobile Price Predictor</div>
-        <div style='font-size: 0.75rem; color: #8E8E93;'>Linear Regression</div>
+        <div style='font-weight: 600; font-size: 1.1rem; color: #f5f5f7;'>Mobile Price Predictor</div>
+        <div style='font-size: 0.75rem; color: #9DA3AE;'>Linear Regression</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
-st.sidebar.markdown("<div style='height: 1px; background: #d2d2d7; margin: 16px 0;'></div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='height: 1px; background: #343A46; margin: 16px 0;'></div>", unsafe_allow_html=True)
 page = st.sidebar.radio(
     "Navigate to",
     ["📘 Business Case & Data", "📊 Data Visualization", "🔮 Model Prediction"],
     label_visibility="collapsed"
 )
-st.sidebar.markdown("<div style='margin-top: 24px; font-size: 0.85rem; color: #6e6e73;'>Data Science • Linear Regression</div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='margin-top: 24px; font-size: 0.85rem; color: #9DA3AE;'>Data Science • Linear Regression</div>", unsafe_allow_html=True)
 
 # =============================================================================
 # PAGE 1: Business Case Presentation & Data Presentation
@@ -170,10 +182,10 @@ if page == "📘 Business Case & Data":
     st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
     # Hero stats banner
     st.markdown(f"""
-    <div style='display: flex; gap: 24px; margin-bottom: 24px; padding: 20px 24px; background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%); border-radius: 16px; border: 1px solid rgba(0,0,0,0.04);'>
-        <div><span style='font-size: 2rem;'>📊</span><br><span style='font-weight: 600; color: #007AFF;'>{len(df):,}</span><br><span style='font-size: 0.8rem; color: #8E8E93;'>Phones</span></div>
-        <div><span style='font-size: 2rem;'>📋</span><br><span style='font-weight: 600; color: #34C759;'>{len(df.columns)}</span><br><span style='font-size: 0.8rem; color: #8E8E93;'>Features</span></div>
-        <div><span style='font-size: 2rem;'>🎯</span><br><span style='font-weight: 600; color: #FF9500;'>4</span><br><span style='font-size: 0.8rem; color: #8E8E93;'>Price Ranges</span></div>
+    <div style='display: flex; gap: 24px; margin-bottom: 24px; padding: 20px 24px; background: linear-gradient(135deg, #161a22 0%, #111318 100%); border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);'>
+        <div><span style='font-size: 2rem;'>📊</span><br><span style='font-weight: 600; color: #007AFF;'>{len(df):,}</span><br><span style='font-size: 0.8rem; color: #9DA3AE;'>Phones</span></div>
+        <div><span style='font-size: 2rem;'>📋</span><br><span style='font-weight: 600; color: #34C759;'>{len(df.columns)}</span><br><span style='font-size: 0.8rem; color: #9DA3AE;'>Features</span></div>
+        <div><span style='font-size: 2rem;'>🎯</span><br><span style='font-weight: 600; color: #FF9500;'>4</span><br><span style='font-size: 0.8rem; color: #9DA3AE;'>Price Ranges</span></div>
     </div>
     """, unsafe_allow_html=True)
     st.title("Mobile Phone Price Range Prediction")
@@ -186,12 +198,12 @@ if page == "📘 Business Case & Data":
         st.markdown("""
         <div class="apple-card">
             <h3 style="color: #007AFF; margin-top: 0;">🎯 Problem Statement</h3>
-            <p style="color: #6e6e73; line-height: 1.6; margin-bottom: 0;">
+            <p style="color: #c3c8d2; line-height: 1.6; margin-bottom: 0;">
             In the competitive mobile phone market, <strong>retailers and manufacturers</strong> need to understand 
             which specifications drive phone pricing. <strong>Consumers</strong> want to know what 
             features they get at different price points.
             </p>
-            <p style="color: #1d1d1f; margin-top: 12px; margin-bottom: 0;">
+            <p style="color: #f5f5f7; margin-top: 12px; margin-bottom: 0;">
             <strong>Our Solution:</strong> Build a predictive model using Linear Regression to estimate 
             a phone's price range (0–3) based on its technical specifications.
             </p>
@@ -202,7 +214,7 @@ if page == "📘 Business Case & Data":
         st.markdown("""
         <div class="apple-card">
             <h3 style="color: #34C759; margin-top: 0;">💡 Business Value</h3>
-            <ul style="color: #6e6e73; line-height: 2; margin-bottom: 0;">
+            <ul style="color: #c3c8d2; line-height: 2; margin-bottom: 0;">
                 <li><strong>Retailers:</strong> Optimize inventory and pricing</li>
                 <li><strong>Manufacturers:</strong> Align specs with price segments</li>
                 <li><strong>Consumers:</strong> Make informed purchase decisions</li>
@@ -217,7 +229,7 @@ if page == "📘 Business Case & Data":
     st.markdown(f"""
     <div class="apple-card">
         <h3 style="margin-top: 0;">Dataset Overview</h3>
-        <p style="color: #6e6e73; line-height: 1.6;">
+        <p style="color: #c3c8d2; line-height: 1.6;">
         The dataset contains <strong style="color: #007AFF;">{len(df):,} mobile phones</strong> with 
         <strong>{len(df.columns)} features</strong> describing technical specifications. 
         Target: <strong>price_range</strong> (0 = low, 1 = medium, 2 = high, 3 = very high cost).
@@ -266,9 +278,9 @@ if page == "📘 Business Case & Data":
 elif page == "📊 Data Visualization":
     st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='display: flex; gap: 16px; margin-bottom: 20px; padding: 16px 20px; background: #f5f5f7; border-radius: 12px;'>
+    <div style='display: flex; gap: 16px; margin-bottom: 20px; padding: 16px 20px; background: #161a22; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);'>
         <span style='font-size: 1.5rem;'>📈</span>
-        <span style='font-size: 0.9rem; color: #6e6e73;'>Key Insights • Correlation Analysis • Feature Explorer</span>
+        <span style='font-size: 0.9rem; color: #c3c8d2;'>Key Insights • Correlation Analysis • Feature Explorer</span>
     </div>
     """, unsafe_allow_html=True)
     st.title("Data Visualization & Insights")
@@ -358,7 +370,7 @@ elif page == "📊 Data Visualization":
         fig_bar, ax_bar = plt.subplots(figsize=(9, 6))
         plt.rcParams.update(CHART_STYLE)
         price_corr.plot(kind="barh", ax=ax_bar, color='#007AFF', edgecolor='none')
-        ax_bar.axvline(x=0, color='#1d1d1f', linewidth=0.5)
+        ax_bar.axvline(x=0, color='#c3c8d2', linewidth=0.5)
         ax_bar.set_xlabel("Correlation with Price Range", fontsize=11)
         ax_bar.set_title("Features Most Correlated with Price Range", fontsize=13, fontweight='600', pad=16)
         ax_bar.spines['top'].set_visible(False)
@@ -392,9 +404,9 @@ elif page == "📊 Data Visualization":
 elif page == "🔮 Model Prediction":
     st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='display: flex; gap: 16px; margin-bottom: 20px; padding: 16px 20px; background: linear-gradient(135deg, #f5f0ff 0%, #f5f5f7 100%); border-radius: 12px; border-left: 4px solid #AF52DE;'>
+    <div style='display: flex; gap: 16px; margin-bottom: 20px; padding: 16px 20px; background: linear-gradient(135deg, #21192e 0%, #161a22 100%); border-radius: 12px; border-left: 4px solid #AF52DE; border: 1px solid rgba(255,255,255,0.08);'>
         <span style='font-size: 1.5rem;'>🔮</span>
-        <span style='font-size: 0.9rem; color: #6e6e73;'>Scikit-Learn Linear Regression • Configurable features • Live metrics</span>
+        <span style='font-size: 0.9rem; color: #c3c8d2;'>Scikit-Learn Linear Regression • Configurable features • Live metrics</span>
     </div>
     """, unsafe_allow_html=True)
     st.title("Linear Regression Model")
@@ -403,7 +415,7 @@ elif page == "🔮 Model Prediction":
     
     st.markdown("""
     <div class="apple-card">
-        <p style="color: #6e6e73; line-height: 1.6; margin: 0;">
+        <p style="color: #c3c8d2; line-height: 1.6; margin: 0;">
         Uses <strong>Scikit-Learn's Linear Regression</strong> to predict price range. 
         Select features in the sidebar and evaluate model performance.
         </p>
@@ -413,7 +425,7 @@ elif page == "🔮 Model Prediction":
     df_model = df.dropna()
     feature_cols = [c for c in df_model.columns if c != "price_range"]
     
-    st.sidebar.markdown("<div style='height: 1px; background: #d2d2d7; margin: 16px 0;'></div>", unsafe_allow_html=True)
+    st.sidebar.markdown("<div style='height: 1px; background: #343A46; margin: 16px 0;'></div>", unsafe_allow_html=True)
     st.sidebar.subheader("Model Configuration")
     features_selection = st.sidebar.multiselect(
         "Select Features (X)", 
