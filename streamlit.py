@@ -36,6 +36,22 @@ APPLE_CSS = """
     [data-testid="stSidebar"] .stRadio > label {
         font-weight: 500;
     }
+    [data-baseweb="select"] > div,
+    [data-baseweb="input"] > div,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea {
+        background: #1b1f29 !important;
+        color: #f5f5f7 !important;
+        border: 1px solid #343A46 !important;
+        border-radius: 10px !important;
+    }
+    [data-baseweb="select"] svg {
+        color: #c3c8d2 !important;
+    }
+    [data-testid="stSlider"] [role="slider"] {
+        background: #007AFF !important;
+    }
     
     /* Card containers */
     .apple-card {
@@ -97,6 +113,13 @@ APPLE_CSS = """
         padding: 10px 20px;
         font-weight: 500;
         background: #1b1f29;
+        color: #c3c8d2;
+        border: 1px solid transparent;
+    }
+    .stTabs [aria-selected="true"] {
+        background: #242a36 !important;
+        color: #f5f5f7 !important;
+        border: 1px solid #3a4150 !important;
     }
     
     /* Expander */
@@ -133,6 +156,14 @@ CHART_STYLE = {
     'font.family': 'sans-serif',
     'font.size': 11,
 }
+
+
+def style_axes(ax):
+    """Apply consistent dark styling to matplotlib axes."""
+    ax.tick_params(colors='#c3c8d2', labelsize=10)
+    for spine in ['bottom', 'left']:
+        ax.spines[spine].set_color('#3a3f4b')
+    ax.grid(True, axis='y', alpha=0.25, linestyle='--', linewidth=0.7)
 
 # Apple color palette
 APPLE_COLORS = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5AC8FA']
@@ -270,7 +301,8 @@ if page == "📘 Business Case & Data":
     
     with col2:
         if st.button("Show Summary Statistics"):
-            st.dataframe(df.describe(), use_container_width=True, hide_index=True)
+            summary_stats = df.describe().reset_index().rename(columns={"index": "Statistic"})
+            st.dataframe(summary_stats, use_container_width=True, hide_index=True)
 
 # =============================================================================
 # PAGE 2: Data Visualization
@@ -308,7 +340,8 @@ elif page == "📊 Data Visualization":
         ax1.set_ylim(0, max(price_counts.values) * 1.15)
         for bar in bars:
             ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 12, 
-                     str(int(bar.get_height())), ha='center', fontsize=11, fontweight='500')
+                     str(int(bar.get_height())), ha='center', fontsize=11, fontweight='500', color='#f5f5f7')
+        style_axes(ax1)
         ax1.spines['top'].set_visible(False)
         ax1.spines['right'].set_visible(False)
         plt.tight_layout(pad=2)
@@ -326,6 +359,7 @@ elif page == "📊 Data Visualization":
         ax2.set_xlabel("Price Range", fontsize=11)
         ax2.set_ylabel("RAM (MB)", fontsize=11)
         ax2.set_title("RAM Distribution by Price Range", fontsize=13, fontweight='600', pad=16)
+        style_axes(ax2)
         ax2.spines['top'].set_visible(False)
         ax2.spines['right'].set_visible(False)
         plt.tight_layout(pad=2)
@@ -343,6 +377,7 @@ elif page == "📊 Data Visualization":
         ax3.set_xlabel("Price Range", fontsize=11)
         ax3.set_ylabel("Battery Power (mAh)", fontsize=11)
         ax3.set_title("Battery Capacity by Price Segment", fontsize=13, fontweight='600', pad=16)
+        style_axes(ax3)
         ax3.spines['top'].set_visible(False)
         ax3.spines['right'].set_visible(False)
         plt.tight_layout(pad=2)
@@ -359,6 +394,7 @@ elif page == "📊 Data Visualization":
         sns.heatmap(corr_matrix, annot=False, cmap="RdBu_r", center=0, 
                     square=True, linewidths=0.5, ax=ax_corr, vmin=-0.5, vmax=0.5)
         ax_corr.set_title("Feature Correlation Matrix", fontsize=13, fontweight='600', pad=16)
+        ax_corr.tick_params(colors='#c3c8d2', labelsize=9)
         plt.tight_layout(pad=2)
         st.pyplot(fig_corr)
         plt.close()
@@ -373,6 +409,7 @@ elif page == "📊 Data Visualization":
         ax_bar.axvline(x=0, color='#c3c8d2', linewidth=0.5)
         ax_bar.set_xlabel("Correlation with Price Range", fontsize=11)
         ax_bar.set_title("Features Most Correlated with Price Range", fontsize=13, fontweight='600', pad=16)
+        style_axes(ax_bar)
         ax_bar.spines['top'].set_visible(False)
         ax_bar.spines['right'].set_visible(False)
         plt.tight_layout(pad=2)
@@ -387,11 +424,15 @@ elif page == "📊 Data Visualization":
         fig_scatter, ax_scatter = plt.subplots(figsize=(9, 6))
         plt.rcParams.update(CHART_STYLE)
         scatter = ax_scatter.scatter(df[col_x], df[col_y], c=df["price_range"], 
-                                    cmap="viridis", alpha=0.65, s=50, edgecolors='white', linewidth=0.3)
+                                    cmap="viridis", alpha=0.7, s=50, edgecolors='#1b1f29', linewidth=0.4)
         ax_scatter.set_xlabel(col_x, fontsize=11)
         ax_scatter.set_ylabel(col_y, fontsize=11)
         ax_scatter.set_title(f"{col_x} vs {col_y} (colored by price range)", fontsize=13, fontweight='600', pad=16)
         cbar = plt.colorbar(scatter, ax=ax_scatter, label="Price Range")
+        cbar.ax.yaxis.label.set_color('#e5e7eb')
+        cbar.ax.tick_params(colors='#c3c8d2')
+        cbar.outline.set_edgecolor('#3a3f4b')
+        style_axes(ax_scatter)
         ax_scatter.spines['top'].set_visible(False)
         ax_scatter.spines['right'].set_visible(False)
         plt.tight_layout(pad=2)
@@ -479,7 +520,7 @@ elif page == "🔮 Model Prediction":
             fig_pred, ax_pred = plt.subplots(figsize=(8, 6))
             plt.rcParams.update(CHART_STYLE)
             ax_pred.scatter(y_test, predictions_clipped, alpha=0.6, s=60, c='#007AFF', 
-                           edgecolors='white', linewidth=0.5)
+                           edgecolors='#1b1f29', linewidth=0.5)
             min_val = min(y_test.min(), predictions_clipped.min())
             max_val = max(y_test.max(), predictions_clipped.max())
             ax_pred.plot([min_val, max_val], [min_val, max_val], "--", color='#FF3B30', 
@@ -487,7 +528,10 @@ elif page == "🔮 Model Prediction":
             ax_pred.set_xlabel("Actual Price Range", fontsize=11)
             ax_pred.set_ylabel("Predicted Price Range", fontsize=11)
             ax_pred.set_title("Actual vs Predicted Price Range", fontsize=13, fontweight='600', pad=16)
-            ax_pred.legend(loc='lower right')
+            style_axes(ax_pred)
+            legend = ax_pred.legend(loc='lower right', frameon=True, facecolor='#161a22', edgecolor='#3a3f4b')
+            for text in legend.get_texts():
+                text.set_color('#e5e7eb')
             ax_pred.spines['top'].set_visible(False)
             ax_pred.spines['right'].set_visible(False)
             plt.tight_layout(pad=2)
@@ -498,11 +542,12 @@ elif page == "🔮 Model Prediction":
             residuals = y_test.values - predictions_clipped
             fig_res, ax_res = plt.subplots(figsize=(8, 5))
             plt.rcParams.update(CHART_STYLE)
-            ax_res.hist(residuals, bins=28, color='#007AFF', edgecolor='white', alpha=0.8)
+            ax_res.hist(residuals, bins=28, color='#007AFF', edgecolor='#1b1f29', alpha=0.8)
             ax_res.axvline(x=0, color='#FF3B30', linestyle='--', linewidth=2)
             ax_res.set_xlabel("Residual (Actual − Predicted)", fontsize=11)
             ax_res.set_ylabel("Frequency", fontsize=11)
             ax_res.set_title("Distribution of Prediction Errors", fontsize=13, fontweight='600', pad=16)
+            style_axes(ax_res)
             ax_res.spines['top'].set_visible(False)
             ax_res.spines['right'].set_visible(False)
             plt.tight_layout(pad=2)
